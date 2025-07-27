@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { db } from "../firebase";
+import { db, auth } from "../firebase";
 import { collection, onSnapshot, deleteDoc, doc } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 import { FaSearch, FaTrash, FaEdit, FaFileExport } from "react-icons/fa";
+import { onAuthStateChanged } from "firebase/auth";
 
 const Vendors = () => {
   const [vendors, setVendors] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentUser, setCurrentUser] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -19,6 +21,14 @@ const Vendors = () => {
     });
 
     return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+    });
+
+    return () => unsubscribeAuth();
   }, []);
 
   const handleDelete = async (id) => {
@@ -63,12 +73,9 @@ const Vendors = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black text-white p-6">
       <div className="max-w-7xl mx-auto">
-        <div
-          className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8"
-          data-aos="fade-down"
-        >
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8" data-aos="fade-down">
           <h1 className="text-4xl font-bold">🛒 Vendors</h1>
-          <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex gap-3">
             <div className="relative">
               <input
                 type="text"
@@ -79,12 +86,14 @@ const Vendors = () => {
               />
               <FaSearch className="absolute left-3 top-3 text-gray-400" />
             </div>
-            <button
-              onClick={handleExport}
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md"
-            >
-              <FaFileExport /> Export CSV
-            </button>
+            {currentUser && (
+              <button
+                onClick={handleExport}
+                className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md"
+              >
+                <FaFileExport /> Export CSV
+              </button>
+            )}
           </div>
         </div>
 
@@ -114,20 +123,22 @@ const Vendors = () => {
                   />
                 )}
 
-                <div className="flex gap-2 mt-4">
-                  <button
-                    onClick={() => handleEdit(vendor)}
-                    className="flex items-center gap-1 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded"
-                  >
-                    <FaEdit /> Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(vendor.id)}
-                    className="flex items-center gap-1 px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded"
-                  >
-                    <FaTrash /> Delete
-                  </button>
-                </div>
+                {currentUser && (
+                  <div className="flex gap-2 mt-4">
+                    <button
+                      onClick={() => handleEdit(vendor)}
+                      className="flex items-center gap-1 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded"
+                    >
+                      <FaEdit /> Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(vendor.id)}
+                      className="flex items-center gap-1 px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded"
+                    >
+                      <FaTrash /> Delete
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
